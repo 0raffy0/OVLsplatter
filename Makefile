@@ -41,7 +41,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 APP_TITLE			:=		OVLspaltter
 APP_AUTHOR		:=	raffy++
 
-APP_VERSION 	:= 		2.0.1
+APP_VERSION 	:= 		2.0.2
 
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build

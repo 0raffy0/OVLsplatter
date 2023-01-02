@@ -1,9 +1,8 @@
 #define TESLA_INIT_IMPL // If you have more than one file using the tesla header, only define this in the main one
 #include <tesla.hpp>    // The Tesla Header
-#include <string>
-	
 
 extern DmntCheatProcessMetadata metadata;
+
 
 namespace Splatoon3 {
 	
@@ -19,6 +18,11 @@ namespace Splatoon3 {
 	void applyColor(float *color, int team);
 
 	bool debugService_isRunning();
+
+	
+	
+	
+	
 
 	class GuiMisc : public tsl::Gui {
 	public:
@@ -57,8 +61,6 @@ namespace Splatoon3 {
 
 			
 			
-			
-			
 			auto *abilityChunks = new tsl::elm::ListItem("99 of all the ability chunks");
 			//If the button is clicked...
 			abilityChunks->setClickListener([](u64 keys) {
@@ -66,9 +68,15 @@ namespace Splatoon3 {
 					
 					int value = 99;
 					
-					for (unsigned int offset = 0x9DA52960; offset <= 0x9DA52994; offset += 4){
-						dmntchtWriteCheatProcessMemory(metadata.heap_extents.base + offset, &value, sizeof(value));
-						dmntchtEnableFrozenAddress(metadata.heap_extents.base + offset, sizeof(value), 0);
+					u64 p;
+					
+					dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x5DBBD88, &p, sizeof(p));
+					dmntchtReadCheatProcessMemory(p + 0x510, &p, sizeof(p));
+					p += 0x478;
+					
+					for (u64 offset = p; offset < p + 14 * 4; offset += 4){
+						dmntchtWriteCheatProcessMemory(offset, &value, sizeof(value));
+						dmntchtEnableFrozenAddress(offset, sizeof(value), 0);
 					}
 					return true;
 				}
@@ -137,6 +145,31 @@ namespace Splatoon3 {
 			});
 			
 			list->addItem(licenses);
+			
+			
+			
+			//Create the button
+			auto *die = new tsl::elm::ListItem("Don't click me!!");
+			//If the button is clicked...
+			die->setClickListener([](u64 keys) {
+				if (keys & HidNpadButton_A) {
+					
+					int value = 0;
+					
+					u64 p;
+					
+					dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x5bf4990, &p, sizeof(p));
+					dmntchtReadCheatProcessMemory(p + 0x50, &p, sizeof(p));
+					dmntchtReadCheatProcessMemory(p + 0x88, &p, sizeof(p));
+					dmntchtWriteCheatProcessMemory(p +0x6C, &value, sizeof(value));
+
+					return true;
+				}
+
+				return false;
+			});
+			
+			list->addItem(die);
 			
 
 			// Add the list to the frame for it to be drawn
@@ -299,19 +332,77 @@ namespace Splatoon3 {
 			auto *rootFrame = new tsl::elm::OverlayFrame("OVLsplatter", "public IPS patches");
 
 			auto list = new tsl::elm::List();
-
-			auto *offlineSave = new tsl::elm::ListItem("Offline save");
-			offlineSave->setClickListener([](u64 keys) {
+			
+			bool flag;
+			u32 instruction;
+			
+			
+			dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x0364EB98, &instruction, sizeof(instruction)); 
+			flag = instruction == 0x52803208;
+			
+			auto *allowHazard = new tsl::elm::ToggleListItem("Allow Hazard Level 200+ (Shoal) [Coxxs]", flag);
+			allowHazard->setClickListener([flag](u64 keys) {
 				if (keys & HidNpadButton_A) {
 					
-					u32 nop = 0xD503201F;
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AA4, &nop, sizeof(nop)); 
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AC4, &nop, sizeof(nop));
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AD0, &nop, sizeof(nop));
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4ADC, &nop, sizeof(nop));
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE0, &nop, sizeof(nop));
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE4, &nop, sizeof(nop));
-					dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE8, &nop, sizeof(nop));
+					if (flag)
+					{
+						u32 instruction = 0xb9403f48;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x364eb98, &instruction, sizeof(instruction));
+					}
+					else
+					{
+						u32 instruction = 0x52803208;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x0364EB98, &instruction, sizeof(instruction)); 
+					}
+					
+					return true;
+				}
+
+				return false;
+			});
+			
+			list->addItem(allowHazard);
+			
+			
+			
+			
+			
+			
+			dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AA4, &instruction, sizeof(instruction)); 
+			flag = instruction == 0xD503201F;
+			
+			auto *offlineSave = new tsl::elm::ToggleListItem("Offline save [Coxxs]", flag);
+			offlineSave->setClickListener([flag](u64 keys) {
+				if (keys & HidNpadButton_A) {
+					
+					if (flag)
+					{
+						u32 instruction = 0x36000440;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4aa4, &instruction, sizeof(instruction));
+						instruction = 0x36000340;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4ac4, &instruction, sizeof(instruction));
+						instruction = 0x540002e1;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4ad0, &instruction, sizeof(instruction));
+						instruction = 0x885f7d09;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4adc, &instruction, sizeof(instruction));
+						instruction = 0x32160129;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4ae0, &instruction, sizeof(instruction));
+						instruction = 0x880a7d09;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4ae4, &instruction, sizeof(instruction));
+						instruction = 0x35ffffaa;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x2cb4ae8, &instruction, sizeof(instruction));
+					}
+					else
+					{
+						u32 instruction = 0xD503201F;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AA4, &instruction, sizeof(instruction)); 
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AC4, &instruction, sizeof(instruction));
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AD0, &instruction, sizeof(instruction));
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4ADC, &instruction, sizeof(instruction));
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE0, &instruction, sizeof(instruction));
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE4, &instruction, sizeof(instruction));
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x02CB4AE8, &instruction, sizeof(instruction));
+					}
 					
 					return true;
 				}
@@ -320,6 +411,76 @@ namespace Splatoon3 {
 			});
 			
 			list->addItem(offlineSave);
+			
+			
+			
+			
+			
+			
+			dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA0, &instruction, sizeof(instruction)); 
+			flag = instruction == 0xD2800020;
+			
+			auto *sunset = new tsl::elm::ToggleListItem("Sunset [Coxxs]", flag);
+			sunset->setClickListener([flag](u64 keys) {
+				if (keys & HidNpadButton_A) {
+					
+					if (flag)
+					{
+						u32 instruction = 0xa9bb7bfd;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x10e6ca0, &instruction, sizeof(instruction));
+						instruction = 0xf9000bf9;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x10e6ca4, &instruction, sizeof(instruction));
+					}
+					else
+					{
+						u32 instruction = 0xD2800020;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA0, &instruction, sizeof(instruction)); 
+						instruction = 0xD65F03C0;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA4, &instruction, sizeof(instruction));
+					}
+					
+					return true;
+				}
+
+				return false;
+			});
+			
+			list->addItem(sunset);
+			
+			
+			
+			
+			
+			
+			dmntchtReadCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA0, &instruction, sizeof(instruction)); 
+			flag = instruction == 0xD2800040;
+			
+			auto *night = new tsl::elm::ToggleListItem("Night [Coxxs]", flag);
+			night->setClickListener([flag](u64 keys) {
+				if (keys & HidNpadButton_A) {
+					
+					if (flag)
+					{
+						u32 instruction = 0xa9bb7bfd;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x10e6ca0, &instruction, sizeof(instruction));
+						instruction = 0xf9000bf9;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x10e6ca4, &instruction, sizeof(instruction));
+					}
+					else
+					{
+						u32 instruction = 0xD2800040;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA0, &instruction, sizeof(instruction)); 
+						instruction = 0xD65F03C0;
+						dmntchtWriteCheatProcessMemory(metadata.main_nso_extents.base + 0x010E6CA4, &instruction, sizeof(instruction));
+					}
+					
+					return true;
+				}
+
+				return false;
+			});
+			
+			list->addItem(night);
 			
 			rootFrame->setContent(list);
 
@@ -367,7 +528,7 @@ namespace Splatoon3 {
 				return false;
 			});
 			
-			auto *IPSpatches = new tsl::elm::ListItem("Public IPS patches (once applied can't be removed!)", "...");
+			auto *IPSpatches = new tsl::elm::ListItem("Public IPS patches", "...");
 			IPSpatches->setClickListener([](u64 keys) {
 				if (keys & HidNpadButton_A) {
 					tsl::changeTo<GuiIPS>();
